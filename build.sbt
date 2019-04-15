@@ -7,7 +7,7 @@ scalaVersion := "2.11.12"
 lazy val root = (project in file(".")).enablePlugins(JavaAppPackaging)
 
 val redisVersion = "2.9.0"
-val kafkaVersion = "2.2.0" //0.10.2.0
+val kafkaVersion = "2.2.0" 
 val slickVersion = "3.3.0"
 val fasteVersion = "2.9.0"
 val playVersion = "1.1.0"
@@ -35,11 +35,12 @@ libraryDependencies ++= Seq(
   "redis.clients"                    % "jedis"                        % "2.9.0"
 )
 
-mainClass in Compile:= Some("com.yomob.adserving.real.time.adserving.AdServingRealTimeApplication")
+mainClass in Compile:= Some("com.kafka.stream.RealTimeApplication")
+
+import NativePackagerHelper._
 
 bashScriptExtraDefines += """addJava "-Dconfig.file=${app_home}/../conf/application.conf""""
 bashScriptExtraDefines += """addJava "-Dlogback.configurationFile=${app_home}/../conf/logback.xml""""
 
-mappings in Universal ++= directory("scripts")
 mappings in Universal ++= directory("src/main/conf")
 unmanagedResourceDirectories in Compile += baseDirectory.value / "src" / "main" / "conf"
