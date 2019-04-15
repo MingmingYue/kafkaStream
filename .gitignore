@@ -1,0 +1,19 @@
+# Mac OSX
+**/.DS_Store
+
+# Intellij IDEA
+*.idea
+**/*.iml
+**.class
+target
+project/target/
+project/project/
+.sbtserver/
+
+# Eclipse
+**/.settings
+**/.project
+**/.classpath
+
+# Maven
+**/target
