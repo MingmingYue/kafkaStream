@@ -7,7 +7,7 @@ scalaVersion := "2.11.12"
 lazy val root = (project in file(".")).enablePlugins(JavaAppPackaging)
 
 val redisVersion = "2.9.0"
-val kafkaVersion = "2.2.0" 
+val kafkaVersion = "2.2.0"
 val slickVersion = "3.3.0"
 val fasteVersion = "2.9.0"
 val playVersion = "1.1.0"
