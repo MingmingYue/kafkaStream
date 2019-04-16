@@ -1,4 +1,4 @@
-package com.kafka.stream.requestfill
+package com.kafka.stream.deal
 
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.Logger
@@ -13,13 +13,13 @@ import scala.collection.mutable.ListBuffer
 /**
   * Created by zmm on 2018/11/2
   */
-class StatisticsProcessor extends Processor[String, String] {
+class JsonExample extends Processor[String, String] {
 
-  val log: Logger = Logger[StatisticsProcessor]
+  val log: Logger = Logger[JsonExample]
 
   private val defaultLength = 1000
   private var context: ProcessorContext = null
-  private var offerRequestStatisticsDataStore: KeyValueStore[String, Data] = null
+  private var dataStore: KeyValueStore[String, Data] = null
   private val punctuateInterval = ConfigFactory.load.getInt("kafka.fill-request-log.punctuate-interval")
 
   override def init(context: ProcessorContext): Unit = {
@@ -27,15 +27,15 @@ class StatisticsProcessor extends Processor[String, String] {
     import java.time.Duration
     context.schedule(Duration.ofMillis(punctuateInterval * 1000), PunctuationType.WALL_CLOCK_TIME, new Punctuator {
       override def punctuate(timestamp: Long): Unit = {
-        log.info("[OFFER-REQUEST-FILL]: start punctuate time {}", timestamp)
+        log.info("[REQUEST-FILL]: start punctuate time {}", timestamp)
         synchronized {
-          saveAllStatistics(offerRequestStatisticsDataStore)
+          saveAllStatistics(dataStore)
         }
         context.commit()
-        log.info("[OFFER-REQUEST-FILL]: end punctuate time {}", System.currentTimeMillis)
+        log.info("[REQUEST-FILL]: end punctuate time {}", System.currentTimeMillis)
       }
     })
-    offerRequestStatisticsDataStore = context.getStateStore("offerRequestStatisticsData-statistics").asInstanceOf[KeyValueStore[String, Data]]
+    dataStore = context.getStateStore("data-statistics").asInstanceOf[KeyValueStore[String, Data]]
   }
 
   override def process(key: String, value: String): Unit = {
@@ -59,7 +59,7 @@ class StatisticsProcessor extends Processor[String, String] {
 
   def dealData(data: Data): Unit = {
     val key = getOfferStatisticsDataKey(data)
-    val offerRequestStatisticsDataTemp = offerRequestStatisticsDataStore.get(key)
+    val offerRequestStatisticsDataTemp = dataStore.get(key)
     if (offerRequestStatisticsDataTemp != null) {
       putValueToKey(key, offerRequestStatisticsDataTemp, data)
     } else {
@@ -78,17 +78,17 @@ class StatisticsProcessor extends Processor[String, String] {
       case DataAPI.NO_FILL =>
         allData.noFill = allData.noFill + 1
       case _ =>
-        log.error(s"[OFFER-REQUEST-FILL] counter: ${requestData.toString}")
+        log.error(s"[REQUEST-FILL] counter: ${requestData.toString}")
     }
-    offerRequestStatisticsDataStore.put(key, allData)
+    dataStore.put(key, allData)
   }
 
   override def close(): Unit = {
-    offerRequestStatisticsDataStore.close()
+    dataStore.close()
   }
 
-  private def getOfferStatisticsDataKey(offerRequestStatisticsData: Data): String = {
-    s"${offerRequestStatisticsData.country}"
+  private def getOfferStatisticsDataKey(data: Data): String = {
+    s"${data.country}"
   }
 
   private def insertDatabase(listBuffer: ListBuffer[Data]): Boolean = {
@@ -99,7 +99,7 @@ class StatisticsProcessor extends Processor[String, String] {
   private def saveAllStatistics(statistics: KeyValueStore[String, _]): Unit = {
     val iterator = statistics.all
     val keySet: scala.collection.mutable.ArrayBuffer[String] = scala.collection.mutable.ArrayBuffer[String]()
-    val offerRequestStatisticsDataList: scala.collection.mutable.ListBuffer[Data] = scala.collection.mutable.ListBuffer[Data]()
+    val dataList: scala.collection.mutable.ListBuffer[Data] = scala.collection.mutable.ListBuffer[Data]()
     try {
       while (iterator.hasNext) {
         val it: KeyValue[String, _] = iterator.next
@@ -107,25 +107,25 @@ class StatisticsProcessor extends Processor[String, String] {
         value match {
           case data: Data => {
             data.request = data.fullFill + data.partFill + data.checkError + data.noFill
-            offerRequestStatisticsDataList.+=(data)
+            dataList.+=(data)
             keySet.+=(it.key)
           }
           case _ => false
         }
       }
-      if (offerRequestStatisticsDataList.length > 0) {
+      if (dataList.nonEmpty) {
         var startValue = 0
-        var insertCount = if (offerRequestStatisticsDataList.length % defaultLength == 0) offerRequestStatisticsDataList.length / defaultLength else offerRequestStatisticsDataList.length / defaultLength + 1
+        var insertCount = if (dataList.length % defaultLength == 0) dataList.length / defaultLength else dataList.length / defaultLength + 1
         while (insertCount > 0) {
-          val offerRequestStatisticsDataListPart = offerRequestStatisticsDataList.slice(startValue, startValue + defaultLength)
-          insertDatabase(offerRequestStatisticsDataListPart)
+          val dataListPart = dataList.slice(startValue, startValue + defaultLength)
+          insertDatabase(dataListPart)
           startValue += defaultLength
           insertCount -= 1
         }
       }
       keySet.foreach(ss => statistics.delete(ss))
     } catch {
-      case e: Exception => log.error("[OFFER-REQUEST-FILL]: Unexpected error when forward statistics", e)
+      case e: Exception => log.error("[REQUEST-FILL]: Unexpected error when forward statistics", e)
     }
     finally {
       iterator.close()

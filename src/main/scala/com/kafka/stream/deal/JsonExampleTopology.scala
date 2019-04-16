@@ -1,4 +1,4 @@
-package com.kafka.stream.requestfill
+package com.kafka.stream.deal
 
 import java.util.Properties
 
@@ -6,7 +6,7 @@ import com.kafka.stream.model.Data
 import com.kafka.stream.serializer.{JsonDeserializer, JsonSerializer}
 import com.typesafe.config.ConfigFactory
 import org.apache.kafka.clients.consumer.ConsumerConfig
-import org.apache.kafka.common.serialization.{Serdes, StringDeserializer}
+import org.apache.kafka.common.serialization.{Serde, Serdes, StringDeserializer}
 import org.apache.kafka.streams.processor.{Processor, ProcessorSupplier}
 import org.apache.kafka.streams.state.Stores
 import org.apache.kafka.streams.Topology
@@ -15,7 +15,7 @@ import org.apache.kafka.streams.{KafkaStreams, StreamsConfig}
 /**
   * Created by zmm on 2018/11/2
   */
-object StatisticsTopology {
+object JsonExampleTopology {
 
   private val broker = ConfigFactory.load.getString("kafka.broker")
   private val sourceTopic = ConfigFactory.load.getString("kafka.fill-request-log.topic")
@@ -24,9 +24,6 @@ object StatisticsTopology {
   private val streamThread = ConfigFactory.load.getInt("kafka.fill-request-log.stream-thread")
 
   def startStream(): KafkaStreams = {
-    val requestDataJsonDeserializer = new JsonDeserializer[Data](classOf[Data])
-    val requestDataJsonSerializer = new JsonSerializer[Data]
-    val offerRequestStatisticsDataSerde = Serdes.serdeFrom(requestDataJsonSerializer, requestDataJsonDeserializer)
     val props = new Properties
     props.put(StreamsConfig.APPLICATION_ID_CONFIG, applicationId)
     props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, broker)
@@ -38,16 +35,16 @@ object StatisticsTopology {
     props.put(StreamsConfig.NUM_STREAM_THREADS_CONFIG, Int.box(streamThread))
 
     val parseRequestLogDataProcessorSupplier = new ProcessorSupplier[String, String] {
-      override def get(): Processor[String, String] = {
-        new StatisticsProcessor
-      }
+      override def get(): Processor[String, String] = new JsonExample
     }
 
+    val dataJsonDeserializer = new JsonDeserializer[Data](classOf[Data])
+    val dataJsonSerializer = new JsonSerializer[Data]
+    val serdeData = Serdes.serdeFrom(dataJsonSerializer, dataJsonDeserializer)
+
     val countStoreSupplier = Stores.keyValueStoreBuilder(
-      Stores.persistentKeyValueStore("offerRequestStatisticsData-statistics"),
-      Serdes.String(),
-      offerRequestStatisticsDataSerde)
-      .withLoggingDisabled()
+      Stores.persistentKeyValueStore("data-statistics"),
+      Serdes.String(), serdeData).withLoggingDisabled()
 
     val builder = new Topology
 

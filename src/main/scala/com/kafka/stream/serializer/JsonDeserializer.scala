@@ -14,18 +14,17 @@ import org.apache.kafka.common.serialization.Deserializer
 class JsonDeserializer[T] extends Deserializer[T] {
 
   val log = Logger[JsonDeserializer[T]]
-  val mapper = new ObjectMapper()
-  mapper.registerModule(DefaultScalaModule)
-  var deserializedClass: Class[T] = null
+  val mapper = new ObjectMapper().registerModule(DefaultScalaModule)
+  var deserializerClass: Class[T] = null
 
   def this(deClass: Class[T]) = {
     this
-    deserializedClass = deClass
+    deserializerClass = deClass
   }
 
   override def configure(configs: util.Map[String, _], isKey: Boolean): Unit = {
-    if (deserializedClass == null) {
-      deserializedClass = configs.get("serializedClass").asInstanceOf[Class[T]]
+    if (deserializerClass == null) {
+      deserializerClass = configs.get("serializedClass").asInstanceOf[Class[T]]
     }
   }
 
@@ -36,7 +35,7 @@ class JsonDeserializer[T] extends Deserializer[T] {
       return null.asInstanceOf[T]
     }
     try {
-      return mapper.readValue(data, deserializedClass)
+      return mapper.readValue(data, deserializerClass)
     }
     catch {
       case e: IOException =>

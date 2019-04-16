@@ -8,7 +8,7 @@ import com.fasterxml.jackson.module.scala.DefaultScalaModule
   */
 object JsonUtil {
 
-  def createScalaObjectMapper :ObjectMapper = {
+  def createScalaObjectMapper: ObjectMapper = {
     val objectMapper = new ObjectMapper
     objectMapper.registerModule(DefaultScalaModule)
     objectMapper
@@ -16,7 +16,7 @@ object JsonUtil {
 
   def getStringFromJson(node: JsonNode, field: String): String = {
     val fieldNode = node.get(field)
-    if (fieldNode == null || StringUtil.isNullOrEmpty(fieldNode.asText())){
+    if (fieldNode == null || StringUtil.isNullOrEmpty(fieldNode.asText())) {
       return null
     }
     fieldNode.asText
@@ -24,7 +24,7 @@ object JsonUtil {
 
   def getLongFromJson(node: JsonNode, field: String): (Boolean, Long) = {
     val fieldNode = node.get(field)
-    if (fieldNode == null || !fieldNode.canConvertToLong){
+    if (fieldNode == null || !fieldNode.canConvertToLong) {
       return (false, -1)
     }
     (true, fieldNode.asLong)
@@ -32,7 +32,7 @@ object JsonUtil {
 
   def getIntFromJson(node: JsonNode, field: String): (Boolean, Int) = {
     val fieldNode = node.get(field)
-    if (fieldNode == null){
+    if (fieldNode == null) {
       return (false, -1)
     }
     val value = fieldNode.asInt(-1)

@@ -8,9 +8,6 @@ import com.kafka.stream.util.JsonUtil
 import com.typesafe.scalalogging.Logger
 import org.apache.kafka.common.serialization.Serializer
 
-/**
-  * Created by zhiweizhao on 2017/10/31.
-  */
 class JsonSerializer[T] extends Serializer[T] {
 
   val log = Logger[JsonSerializer[T]]
@@ -27,7 +24,7 @@ class JsonSerializer[T] extends Serializer[T] {
         e.printStackTrace()
       }
     }
-    return null
+    null
   }
 
   override def close(): Unit = {}
